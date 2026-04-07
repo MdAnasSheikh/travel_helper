@@ -1,12 +1,23 @@
 const express = require('express');
 const { Op } = require('sequelize');
+const rateLimit = require('express-rate-limit');
 const { Booking } = require('../models');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// Rate-limit booking writes to prevent abuse
+const bookingsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
 // All bookings routes require authentication
 router.use(auth);
+router.use(bookingsLimiter);
 
 // POST /api/bookings — create a new booking
 router.post('/', async (req, res) => {

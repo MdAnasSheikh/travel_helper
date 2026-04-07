@@ -12,6 +12,20 @@ const bookingsRoutes = require('./routes/bookings');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// CSRF protection: state-changing requests from browsers must carry the
+// custom X-Requested-With header, which cross-origin requests cannot set
+// without a CORS preflight that our restrictive CORS policy will block.
+function csrfGuard(req, res, next) {
+  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+  if (safeMethods.includes(req.method)) return next();
+
+  const requested = req.headers['x-requested-with'];
+  if (!requested || requested.toLowerCase() !== 'xmlhttprequest') {
+    return res.status(403).json({ error: 'Forbidden: missing CSRF header.' });
+  }
+  next();
+}
+
 // Middleware
 app.use(
   cors({
@@ -21,6 +35,7 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrfGuard);
 
 // Routes
 app.use('/api/auth', authRoutes);
