@@ -132,6 +132,8 @@ const distanceLookup = {
 
 // Earth's mean radius in kilometres (WGS-84)
 const EARTH_RADIUS_KM = 6371;
+// Used when both lookup table and coordinate data are unavailable
+const DEFAULT_FALLBACK_DISTANCE_KM = 500;
 
 /**
  * Haversine formula to calculate great-circle distance between two coordinates.
@@ -174,7 +176,7 @@ function getDistance(city1, city2) {
   }
 
   // Default fallback for unknown cities
-  return 500;
+  return DEFAULT_FALLBACK_DISTANCE_KM;
 }
 
 module.exports = { getDistance, cityCoordinates, distanceLookup };

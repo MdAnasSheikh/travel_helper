@@ -50,12 +50,12 @@ router.get('/options', async (req, res) => {
     if (!to || typeof to !== 'string' || to.trim().length === 0) {
       return res.status(400).json({ error: 'Destination city (to) is required.' });
     }
-    if (from.trim().toLowerCase() === to.trim().toLowerCase()) {
-      return res.status(400).json({ error: 'Origin and destination cannot be the same city.' });
-    }
-
     const fromCity = from.trim();
     const toCity = to.trim();
+
+    if (fromCity.toLowerCase() === toCity.toLowerCase()) {
+      return res.status(400).json({ error: 'Origin and destination cannot be the same city.' });
+    }
 
     const distance = getDistance(fromCity, toCity);
 

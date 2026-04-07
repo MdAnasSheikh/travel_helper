@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const { doubleCsrf } = require('csrf-csrf');
 
 const { sequelize } = require('./models');
 const authRoutes = require('./routes/auth');
@@ -11,20 +12,6 @@ const bookingsRoutes = require('./routes/bookings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// CSRF protection: state-changing requests from browsers must carry the
-// custom X-Requested-With header, which cross-origin requests cannot set
-// without a CORS preflight that our restrictive CORS policy will block.
-function csrfGuard(req, res, next) {
-  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (safeMethods.includes(req.method)) return next();
-
-  const requested = req.headers['x-requested-with'];
-  if (!requested || requested.toLowerCase() !== 'xmlhttprequest') {
-    return res.status(403).json({ error: 'Forbidden: missing CSRF header.' });
-  }
-  next();
-}
 
 // Middleware
 app.use(
@@ -35,7 +22,29 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use(csrfGuard);
+
+// CSRF protection using the double-submit cookie pattern.
+// The client must read the `x-csrf-token` value from the `_csrf` cookie
+// and send it back in the `x-csrf-token` request header for all
+// state-changing requests (POST, PUT, PATCH, DELETE).
+const { generateToken, doubleCsrfProtection } = doubleCsrf({
+  getSecret: () => process.env.JWT_SECRET || 'csrf-fallback-secret',
+  cookieName: '_csrf',
+  cookieOptions: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  },
+  size: 64,
+  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
+});
+
+// Expose CSRF token to the SPA
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: generateToken(req, res) });
+});
+
+app.use(doubleCsrfProtection);
 
 // Routes
 app.use('/api/auth', authRoutes);
