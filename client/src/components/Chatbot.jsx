@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 
+const TRANSPORT_EMOJIS = { train: '🚂', flight: '✈️', bus: '🚌', taxi: '🚕' }
+
 const GREET = `Hi! I'm TravelBot 🤖\nI can help you compare your options. Ask me:\n• "Which is cheapest?"\n• "What's the fastest?"\n• "Most eco-friendly?"\n• "Which has the best AI score?"`
 
 function generateResponse(input, results, from, to) {
@@ -58,7 +60,7 @@ function generateResponse(input, results, from, to) {
 
   if (/option|choice|all|list|show/.test(q)) {
     return results.map(r =>
-      `${['train','flight','bus','taxi'].find(k => k === r.type) === 'train' ? '🚂' : r.type === 'flight' ? '✈️' : r.type === 'bus' ? '🚌' : '🚕'} **${r.company}** — ₹${r.price.toLocaleString('en-IN')} · ${fmt(r.duration)} · ${r.aiScore}%`
+      `${TRANSPORT_EMOJIS[r.type] || '🚌'} **${r.company}** — ₹${r.price.toLocaleString('en-IN')} · ${fmt(r.duration)} · ${r.aiScore}%`
     ).join('\n')
   }
 

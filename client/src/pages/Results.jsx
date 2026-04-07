@@ -5,6 +5,9 @@ import ResultCard from '../components/ResultCard'
 import Chatbot from '../components/Chatbot'
 import api from '../utils/api'
 
+const capitalizeType = (type) =>
+  type ? type.charAt(0).toUpperCase() + type.slice(1) : type
+
 function computeAIScores(options) {
   const maxPrice = Math.max(...options.map(o => o.price))
   const maxDuration = Math.max(...options.map(o => o.duration))
@@ -180,7 +183,7 @@ export default function Results() {
                   <i className="bi bi-trophy-fill me-1" />AI Best Pick
                 </span>
                 <span className="fw-800 fs-5">{bestOption.company}</span>
-                <span className="text-muted fw-600">({['train','flight','bus','taxi'].includes(bestOption.type) ? bestOption.type.charAt(0).toUpperCase() + bestOption.type.slice(1) : bestOption.type})</span>
+                <span className="text-muted fw-600">({capitalizeType(bestOption.type)})</span>
               </div>
               <p className="mb-2 fw-600">{getExplanation(bestOption, results)}</p>
               <div className="d-flex flex-wrap gap-3">
