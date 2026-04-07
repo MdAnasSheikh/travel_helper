@@ -69,6 +69,10 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
+  // CSRF validation failures come through as ForbiddenError (status 403) from csrf-csrf
+  if (err.status === 403 || err.statusCode === 403 || err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ error: 'Invalid or missing CSRF token.' });
+  }
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error.' });
 });

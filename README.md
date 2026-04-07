@@ -50,6 +50,16 @@ npm run dev
 # App runs at http://localhost:5173
 ```
 
+## CSRF Protection
+
+The backend uses the **double-submit cookie** pattern (`csrf-csrf`). On every state-changing request (POST / PUT / PATCH / DELETE), the client automatically:
+
+1. Fetches `GET /api/csrf-token` once on startup to receive a signed token and set the `_csrf` cookie.
+2. Attaches the token as the `x-csrf-token` request header.
+3. Retries once with a refreshed token if a `403` is returned.
+
+Invalid or missing CSRF tokens are returned as **HTTP 403** (not 500).
+
 ## Features
 
 - 🔍 **Smart Search** — Auto-suggest Indian cities, compare all transport modes
