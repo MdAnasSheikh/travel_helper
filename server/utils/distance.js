@@ -130,6 +130,9 @@ const distanceLookup = {
   'Leh-Delhi': 1010,
 };
 
+// Earth's mean radius in kilometres (WGS-84)
+const EARTH_RADIUS_KM = 6371;
+
 /**
  * Haversine formula to calculate great-circle distance between two coordinates.
  * @param {number[]} coord1 - [lat, lon]
@@ -137,7 +140,6 @@ const distanceLookup = {
  * @returns {number} Distance in km
  */
 function haversine(coord1, coord2) {
-  const R = 6371;
   const [lat1, lon1] = coord1.map((d) => (d * Math.PI) / 180);
   const [lat2, lon2] = coord2.map((d) => (d * Math.PI) / 180);
 
@@ -148,7 +150,7 @@ function haversine(coord1, coord2) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
 
-  return Math.round(R * 2 * Math.asin(Math.sqrt(a)));
+  return Math.round(EARTH_RADIUS_KM * 2 * Math.asin(Math.sqrt(a)));
 }
 
 /**

@@ -15,9 +15,10 @@ const bookingsLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' },
 });
 
+// Rate-limit all bookings routes to prevent brute-force and abuse
+router.use(bookingsLimiter);
 // All bookings routes require authentication
 router.use(auth);
-router.use(bookingsLimiter);
 
 // POST /api/bookings — create a new booking
 router.post('/', async (req, res) => {

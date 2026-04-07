@@ -9,6 +9,26 @@ const FLIGHT_COMPANIES = ['IndiGo', 'Air India', 'SpiceJet'];
 const BUS_COMPANIES = ['RedBus', 'VRL Travels', 'Raj National Express'];
 const TAXI_COMPANIES = ['Ola Outstation', 'Uber Intercity', 'Zoomcar'];
 
+// Flight pricing and emission constants
+const FLIGHT_BASE_FARE = 1500;        // Base fare in INR regardless of distance
+const FLIGHT_PRICE_PER_KM_MIN = 4;   // Minimum INR per km
+const FLIGHT_PRICE_PER_KM_MAX = 6;   // Maximum INR per km
+const FLIGHT_SPEED_KMH = 800;        // Approximate cruising speed
+const FLIGHT_TURNAROUND_MIN = 90;    // Ground time added to block time (minutes)
+// Source: ICAO Carbon Emissions Calculator methodology (~255 g CO₂ per passenger-km)
+const FLIGHT_CO2_PER_KM = 0.255;
+
+const BUS_PRICE_PER_KM = 1.2;
+const BUS_BASE_FARE = 50;
+const BUS_SPEED_KMH = 55;
+// Source: EEA (European Environment Agency) — ~68 g CO₂/passenger-km for coaches
+const BUS_CO2_PER_KM = 0.068;
+
+const TAXI_PRICE_PER_KM = 14;
+const TAXI_SPEED_KMH = 60;
+// Source: EEA — ~171 g CO₂/passenger-km for petrol cars
+const TAXI_CO2_PER_KM = 0.171;
+
 function formatDuration(minutes) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -100,11 +120,10 @@ router.get('/options', async (req, res) => {
     // --- FLIGHTS ---
     const numFlights = distance > 300 ? 3 : 2;
     for (let i = 0; i < numFlights; i++) {
-      const pricePerKm = randomBetween(4, 6);
-      const flightPrice = Math.round(distance * pricePerKm + 1500);
-      const flightDuration = Math.round((distance / 800) * 60 + 90);
-      const co2PerKm = 0.255; // kg CO₂ per km (aviation avg)
-      const co2 = Math.round(distance * co2PerKm);
+      const pricePerKm = randomBetween(FLIGHT_PRICE_PER_KM_MIN, FLIGHT_PRICE_PER_KM_MAX);
+      const flightPrice = Math.round(distance * pricePerKm + FLIGHT_BASE_FARE);
+      const flightDuration = Math.round((distance / FLIGHT_SPEED_KMH) * 60 + FLIGHT_TURNAROUND_MIN);
+      const co2 = Math.round(distance * FLIGHT_CO2_PER_KM);
       const company = FLIGHT_COMPANIES[i % FLIGHT_COMPANIES.length];
 
       options.push({
@@ -126,8 +145,8 @@ router.get('/options', async (req, res) => {
     }
 
     // --- BUS ---
-    const busDuration = Math.round((distance / 55) * 60);
-    const busPrice = Math.round(distance * 1.2 + 50);
+    const busDuration = Math.round((distance / BUS_SPEED_KMH) * 60);
+    const busPrice = Math.round(distance * BUS_PRICE_PER_KM + BUS_BASE_FARE);
     const busCompany = BUS_COMPANIES[Math.floor(Math.random() * BUS_COMPANIES.length)];
     options.push({
       id: 'bus-0',
@@ -141,14 +160,14 @@ router.get('/options', async (req, res) => {
       price: busPrice,
       class: 'Sleeper',
       comfort: 3,
-      co2: Math.round(distance * 0.068),
+      co2: Math.round(distance * BUS_CO2_PER_KM),
       rating: parseFloat((3.5 + Math.random() * 0.5).toFixed(1)),
       distance,
     });
 
     // --- TAXI ---
-    const taxiDuration = Math.round((distance / 60) * 60);
-    const taxiPrice = Math.round(distance * 14);
+    const taxiDuration = Math.round((distance / TAXI_SPEED_KMH) * 60);
+    const taxiPrice = Math.round(distance * TAXI_PRICE_PER_KM);
     const taxiCompany = TAXI_COMPANIES[Math.floor(Math.random() * TAXI_COMPANIES.length)];
     options.push({
       id: 'taxi-0',
@@ -162,7 +181,7 @@ router.get('/options', async (req, res) => {
       price: taxiPrice,
       class: 'Sedan/SUV',
       comfort: 5,
-      co2: Math.round(distance * 0.171),
+      co2: Math.round(distance * TAXI_CO2_PER_KM),
       rating: parseFloat((4.0 + Math.random() * 0.5).toFixed(1)),
       distance,
     });

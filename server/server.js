@@ -62,7 +62,10 @@ app.use((err, req, res, next) => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
 
-    await sequelize.sync({ alter: true });
+    // Use `alter` in development to keep schema in sync with models.
+    // In production, use proper migrations instead.
+    const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
+    await sequelize.sync(syncOptions);
     console.log('Database models synchronised.');
 
     app.listen(PORT, () => {
