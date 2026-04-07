@@ -10,6 +10,14 @@ const authRoutes = require('./routes/auth');
 const searchRoutes = require('./routes/search');
 const bookingsRoutes = require('./routes/bookings');
 
+// Fail fast on missing required environment variables
+const REQUIRED_ENV = ['JWT_SECRET', 'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.error(`Missing required environment variables: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -28,7 +36,7 @@ app.use(cookieParser());
 // and send it back in the `x-csrf-token` request header for all
 // state-changing requests (POST, PUT, PATCH, DELETE).
 const { generateToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret: () => process.env.JWT_SECRET || 'csrf-fallback-secret',
+  getSecret: () => process.env.JWT_SECRET,
   cookieName: '_csrf',
   cookieOptions: {
     httpOnly: true,
