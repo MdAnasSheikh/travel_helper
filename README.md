@@ -54,7 +54,7 @@ npm run dev
 
 The backend uses the **double-submit cookie** pattern (`csrf-csrf`). On every state-changing request (POST / PUT / PATCH / DELETE), the client automatically:
 
-1. Fetches `GET /api/csrf-token` once on startup to receive a signed token and set the `_csrf` cookie.
+1. Fetches `GET /api/csrf-token` lazily before the first state-changing request to receive a signed token and set the `_csrf` cookie.
 2. Attaches the token as the `x-csrf-token` request header.
 3. Retries once with a refreshed token if a `403` is returned.
 

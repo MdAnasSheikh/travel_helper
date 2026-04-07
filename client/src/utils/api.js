@@ -33,8 +33,14 @@ api.interceptors.request.use(async config => {
 api.interceptors.response.use(
   res => res,
   async err => {
-    // If the server rejects the CSRF token (403), refresh it and retry once
-    if (err.response?.status === 403 && !err.config?._csrfRetried) {
+    // If the server rejects the CSRF token specifically, refresh it and retry once.
+    // Only retry for CSRF-specific 403s (response body contains "csrf") to avoid
+    // refreshing the token on unrelated authorization failures.
+    const isCsrf403 =
+      err.response?.status === 403 &&
+      typeof err.response?.data?.error === 'string' &&
+      err.response.data.error.toLowerCase().includes('csrf')
+    if (isCsrf403 && !err.config?._csrfRetried) {
       err.config._csrfRetried = true
       await fetchCsrfToken()
       err.config.headers['x-csrf-token'] = csrfToken
