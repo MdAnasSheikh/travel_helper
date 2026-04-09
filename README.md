@@ -52,6 +52,15 @@ npm run dev
 # App runs at http://localhost:5173
 ```
 
+## localhost vs 127.0.0.1 — Cookie Mismatch
+
+Browsers treat `localhost` and `127.0.0.1` as **different origins** for cookie scoping purposes.
+
+- Always open the frontend at **http://localhost:5173** (not `http://127.0.0.1:5173`).
+- The backend should be accessed at **http://localhost:5000** (not `http://127.0.0.1:5000`).
+
+If you mix these, the `token` and `_csrf` cookies set by the backend will **not be sent** on subsequent requests, causing 401 "Authentication required" errors even after a successful login. The Vite dev proxy (`/api → http://localhost:5000`) already handles the forwarding, so you never need to call port 5000 directly from the browser.
+
 ## CSRF Protection
 
 The backend uses the **double-submit cookie** pattern (`csrf-csrf`). The client automatically handles CSRF without any manual steps:
