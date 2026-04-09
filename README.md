@@ -52,13 +52,15 @@ npm run dev
 
 ## CSRF Protection
 
-The backend uses the **double-submit cookie** pattern (`csrf-csrf`). On every state-changing request (POST / PUT / PATCH / DELETE), the client automatically:
+The backend uses the **double-submit cookie** pattern (`csrf-csrf` v4+). On every state-changing request (POST / PUT / PATCH / DELETE), the client automatically:
 
-1. Fetches `GET /api/csrf-token` lazily before the first state-changing request to receive a signed token and set the `_csrf` cookie.
-2. Attaches the token as the `x-csrf-token` request header.
-3. Retries once with a refreshed token if a `403` is returned.
+1. Pre-warms the CSRF token at app startup via `GET /api/csrf-token`, which sets the `_csrf` cookie and returns the signed token.
+2. Attaches the token as the `x-csrf-token` request header on every state-changing request.
+3. Retries once with a fresh token if the server returns a `403` CSRF rejection.
 
 Invalid or missing CSRF tokens are returned as **HTTP 403** (not 500).
+
+> **Implementation note:** `csrf-csrf` v4 exports `generateCsrfToken` (not `generateToken`). The server correctly calls `generateCsrfToken(req, res)` to issue tokens.
 
 ## Features
 
