@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import api from '../utils/api'
 
@@ -8,12 +9,19 @@ export default function Bookings() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
+  const navigate = useNavigate()
 
   const fetchBookings = () => {
     setLoading(true)
     api.get('/bookings')
       .then(res => setBookings(res.data?.bookings || res.data || []))
-      .catch(err => toast.error(err.message))
+      .catch(err => {
+        if (err.status === 401) {
+          navigate('/login', { replace: true })
+        } else {
+          toast.error(err.message)
+        }
+      })
       .finally(() => setLoading(false))
   }
 
@@ -26,7 +34,11 @@ export default function Bookings() {
       setBookings(b => b.filter(bk => bk.id !== id))
       toast.success('Booking removed')
     } catch (err) {
-      toast.error(err.message)
+      if (err.status === 401) {
+        navigate('/login', { replace: true })
+      } else {
+        toast.error(err.message)
+      }
     } finally {
       setDeleting(null)
     }

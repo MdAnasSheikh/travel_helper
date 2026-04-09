@@ -49,6 +49,7 @@ const csrfSetup = doubleCsrf({
   cookieName: '_csrf',
   cookieOptions: {
     httpOnly: true,
+    path: '/',
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
   },

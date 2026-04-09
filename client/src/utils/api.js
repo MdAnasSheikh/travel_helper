@@ -53,7 +53,9 @@ api.interceptors.response.use(
     } else {
       message = err.response?.data?.error || err.response?.data?.message || err.message || 'Something went wrong'
     }
-    return Promise.reject(new Error(message))
+    const error = new Error(message)
+    error.status = err.response?.status || null
+    return Promise.reject(error)
   }
 )
 
