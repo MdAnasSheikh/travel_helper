@@ -38,7 +38,9 @@ cp .env.example .env
 cd server
 npm install
 npm run dev
-# Server runs at http://localhost:5000
+# API server runs at http://localhost:5000
+# Note: the backend root (GET /) returns a JSON hint — it is API-only.
+#       Use GET /api/health to check the server status.
 ```
 
 ### 5. Start the frontend (Terminal 2)
@@ -52,11 +54,11 @@ npm run dev
 
 ## CSRF Protection
 
-The backend uses the **double-submit cookie** pattern (`csrf-csrf`). On every state-changing request (POST / PUT / PATCH / DELETE), the client automatically:
+The backend uses the **double-submit cookie** pattern (`csrf-csrf`). The client automatically handles CSRF without any manual steps:
 
-1. Fetches `GET /api/csrf-token` lazily before the first state-changing request to receive a signed token and set the `_csrf` cookie.
-2. Attaches the token as the `x-csrf-token` request header.
-3. Retries once with a refreshed token if a `403` is returned.
+1. Before the first state-changing request (POST / PUT / PATCH / DELETE), the client fetches `GET /api/csrf-token` to receive a signed token and set the `_csrf` cookie.
+2. The token is attached as the `x-csrf-token` request header on every subsequent state-changing request.
+3. If the server returns `403`, the token is refreshed and the request is retried once automatically.
 
 Invalid or missing CSRF tokens are returned as **HTTP 403** (not 500).
 
