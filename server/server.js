@@ -35,8 +35,17 @@ app.use(cookieParser());
 // The client must read the `x-csrf-token` value from the `_csrf` cookie
 // and send it back in the `x-csrf-token` request header for all
 // state-changing requests (POST, PUT, PATCH, DELETE).
-const { generateToken, doubleCsrfProtection } = doubleCsrf({
+//
+// Use the full csrfSetup object so we are compatible with both csrf-csrf v2
+// (which exports `generateToken`) and v4 (which exports `generateCsrfToken`).
+const csrfSetup = doubleCsrf({
   getSecret: () => process.env.JWT_SECRET,
+  // Use the JWT auth cookie as the session identifier when the user is logged in,
+  // which binds the CSRF token to that specific authentication session.
+  // For unauthenticated requests (login / register), fall back to an empty string
+  // so tokens are still generated — the double-submit cookie pattern remains secure
+  // because the token is also stored in a httpOnly cookie that the attacker cannot read.
+  getSessionIdentifier: (req) => req.cookies?.token || '',
   cookieName: '_csrf',
   cookieOptions: {
     httpOnly: true,
@@ -46,10 +55,18 @@ const { generateToken, doubleCsrfProtection } = doubleCsrf({
   size: 64,
   ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
 });
+const generateToken = csrfSetup.generateToken || csrfSetup.generateCsrfToken;
+const { doubleCsrfProtection } = csrfSetup;
 
 // Expose CSRF token to the SPA
 app.get('/api/csrf-token', (req, res) => {
   res.json({ csrfToken: generateToken(req, res) });
+});
+
+// Root route — helpful hint for developers hitting localhost:5000 directly.
+// Registered before CSRF protection so it is always accessible.
+app.get('/', (req, res) => {
+  res.json({ message: 'TravelCompare API — use /api/health to check status.' });
 });
 
 app.use(doubleCsrfProtection);
@@ -69,8 +86,15 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  // CSRF validation failures come through as ForbiddenError (status 403) from csrf-csrf
-  if (err.status === 403 || err.statusCode === 403 || err.code === 'EBADCSRFTOKEN') {
+  // CSRF validation failures come through as ForbiddenError (status 403) from csrf-csrf.
+  // Check both the numeric status and the error name / code for maximum compatibility
+  // across csrf-csrf versions.
+  if (
+    err.status === 403 ||
+    err.statusCode === 403 ||
+    err.code === 'EBADCSRFTOKEN' ||
+    err.name === 'ForbiddenError'
+  ) {
     return res.status(403).json({ error: 'Invalid or missing CSRF token.' });
   }
   console.error('Unhandled error:', err);
