@@ -119,20 +119,25 @@ export default function Results() {
     setLoading(true)
     setMockMode(false)
 
-    api.get(`/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}`)
+    api.get(`/search/options?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}`)
       .then(res => {
-        const data = res.data?.results || res.data || []
+        const data = res.data?.options || res.data?.results || res.data || []
         if (Array.isArray(data) && data.length > 0) {
           setResults(computeAIScores(data))
         } else {
           throw new Error('empty')
         }
       })
-      .catch(() => {
+      .catch((err) => {
         const mock = getMockResults(from, to)
         setResults(mock)
         setMockMode(true)
-        toast.info('🔌 Backend not running — showing estimated mock results. Start the server for live data.', { autoClose: 6000 })
+        // Only show "backend not running" if it was a network error (no response)
+        if (!err.status) {
+          toast.info('🔌 Backend not running — showing estimated mock results. Start the server for live data.', { autoClose: 6000 })
+        } else {
+          toast.info('⚠️ Could not load live results — showing estimated mock data.', { autoClose: 5000 })
+        }
       })
       .finally(() => setLoading(false))
   }, [from, to, date])
@@ -155,9 +160,13 @@ export default function Results() {
           </h2>
           <div className="text-muted">
             <i className="bi bi-calendar3 me-1" />{date}
-            {mockMode && (
+            {mockMode ? (
               <span className="badge bg-warning text-dark ms-2 fw-600" style={{ fontSize: '0.72rem' }}>
                 Mock Data
+              </span>
+            ) : !loading && (
+              <span className="badge bg-success ms-2 fw-600" style={{ fontSize: '0.72rem' }}>
+                <i className="bi bi-circle-fill me-1" style={{ fontSize: '0.5rem' }} />Live
               </span>
             )}
           </div>

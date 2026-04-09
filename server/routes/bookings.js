@@ -23,7 +23,7 @@ router.use(auth);
 // POST /api/bookings — create a new booking
 router.post('/', async (req, res) => {
   try {
-    const { from_city, to_city, transport, price, date, company, duration } = req.body;
+    const { from_city, to_city, transport, price, date, company, duration, booking_url } = req.body;
 
     if (!from_city || typeof from_city !== 'string' || from_city.trim().length === 0) {
       return res.status(400).json({ error: 'Origin city (from_city) is required.' });
@@ -43,6 +43,21 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Travel date is required.' });
     }
 
+    // Validate booking_url if provided
+    if (booking_url !== undefined && booking_url !== null) {
+      if (typeof booking_url !== 'string' || booking_url.length > 2048) {
+        return res.status(400).json({ error: 'Invalid booking URL.' });
+      }
+      try {
+        const parsed = new URL(booking_url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return res.status(400).json({ error: 'booking_url must use http or https.' });
+        }
+      } catch {
+        return res.status(400).json({ error: 'booking_url is not a valid URL.' });
+      }
+    }
+
     const booking = await Booking.create({
       user_id: req.user.id,
       from_city: from_city.trim(),
@@ -52,6 +67,7 @@ router.post('/', async (req, res) => {
       date,
       company: company ? company.trim() : null,
       duration: duration ? String(duration).trim() : null,
+      booking_url: booking_url || null,
     });
 
     return res.status(201).json({ booking });

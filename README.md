@@ -81,9 +81,31 @@ Invalid or missing CSRF tokens are returned as **HTTP 403** (not 500).
 - 🔐 **Auth** — JWT + httpOnly cookies, protected Bookings / Profile / Settings
 - 📱 **Responsive** — Mobile-first, Bootstrap 5.3
 
-## Mock Mode
+## Mock Mode vs Live Results
 
-When the backend is not running, the app automatically falls back to client-side mock data so you can explore the full UI without a database.
+When the backend is **running**, the Results page fetches real travel options from `GET /api/search/options` and shows a **Live** badge next to the date.
+
+When the backend is **not running** (or returns a network error), the app automatically falls back to client-side mock data and shows a **Mock Data** badge. All AI scoring and UI features still work in mock mode.
+
+> **Tip:** The "Mock Data" badge disappears as soon as both servers are started and the frontend can reach `http://localhost:5000`.
+
+## Book Now — Provider Deep-Links
+
+Clicking **Book Now** on a result card does two things simultaneously:
+
+1. **Saves** the booking to your account (POST `/api/bookings`) — visible in *My Bookings*.
+2. **Opens** the real provider booking site in a new tab so you can complete the purchase.
+
+Provider sites used:
+
+| Transport | Provider |
+|-----------|----------|
+| 🚂 Train | [IRCTC](https://www.irctc.co.in/nget/train-search) |
+| ✈️ Flight | Air India / IndiGo / SpiceJet / Vistara (direct) or [Google Flights](https://www.google.com/flights) |
+| 🚌 Bus | [RedBus](https://www.redbus.in) |
+| 🚕 Taxi | [Uber](https://www.uber.com/in/en/ride/) or [Ola](https://www.olacabs.com/) |
+
+The provider URL is also stored in the database (`booking_url` column) and displayed as an **Open Provider** button in *My Bookings*.
 
 ## Tech Stack
 
