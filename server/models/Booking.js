@@ -46,6 +46,10 @@ const Booking = sequelize.define(
     duration: {
       type: DataTypes.STRING,
     },
+    booking_url: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

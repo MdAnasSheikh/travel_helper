@@ -80,10 +80,25 @@ Invalid or missing CSRF tokens are returned as **HTTP 403** (not 500).
 - 🌓 **Dark/Light Theme** — Persisted via localStorage
 - 🔐 **Auth** — JWT + httpOnly cookies, protected Bookings / Profile / Settings
 - 📱 **Responsive** — Mobile-first, Bootstrap 5.3
+- 🔗 **Provider Links** — "Book Now" saves the booking to DB **and** opens the real provider site (IRCTC for trains, Google Flights for flights, RedBus for buses, Ola/Uber/Zoomcar for taxis) in a new tab. The provider URL is stored with the booking so you can reopen it any time from the **My Bookings** page.
 
 ## Mock Mode
 
 When the backend is not running, the app automatically falls back to client-side mock data so you can explore the full UI without a database.
+
+When the backend **is** running, the Results page calls `GET /api/search/options?from=&to=&date=` and displays live calculated results (real Indian Railways train data, distance-based pricing for flights/bus/taxi).
+
+## Bookings — Provider Links
+
+Clicking **Book Now** on any result card will:
+1. Save the booking (route, price, company, transport mode, and provider URL) to the MySQL `bookings` table.
+2. Immediately open the relevant provider website in a new tab:
+   - **Train** → [IRCTC Train Search](https://www.irctc.co.in/nget/train-search)
+   - **Flight** → [Google Flights](https://www.google.com/travel/flights)
+   - **Bus** → [RedBus](https://www.redbus.in) with the route pre-filled
+   - **Taxi** → Ola / Uber / Zoomcar (based on the selected company)
+
+On the **My Bookings** page, each booking with a stored provider URL shows an **"Open Provider Site"** button to reopen it at any time.
 
 ## Tech Stack
 
