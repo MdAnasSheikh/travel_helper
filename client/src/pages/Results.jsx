@@ -119,20 +119,28 @@ export default function Results() {
     setLoading(true)
     setMockMode(false)
 
-    api.get(`/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}`)
+    api.get(`/search/options?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${date}`)
       .then(res => {
-        const data = res.data?.results || res.data || []
+        const data = res.data?.options || res.data?.results || res.data || []
         if (Array.isArray(data) && data.length > 0) {
           setResults(computeAIScores(data))
         } else {
-          throw new Error('empty')
+          const mock = getMockResults(from, to)
+          setResults(mock)
+          setMockMode(true)
+          toast.info('No results from server — showing estimated mock results.', { autoClose: 5000 })
         }
       })
-      .catch(() => {
+      .catch(err => {
         const mock = getMockResults(from, to)
         setResults(mock)
         setMockMode(true)
-        toast.info('🔌 Backend not running — showing estimated mock results. Start the server for live data.', { autoClose: 6000 })
+        if (!err.status) {
+          // null status means network error — backend is not reachable
+          toast.info('🔌 Backend not running — showing estimated mock results. Start the server for live data.', { autoClose: 6000 })
+        } else {
+          toast.warn(`Server error (${err.status}) — showing estimated mock results.`, { autoClose: 5000 })
+        }
       })
       .finally(() => setLoading(false))
   }, [from, to, date])

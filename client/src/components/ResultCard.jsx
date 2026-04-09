@@ -10,6 +10,39 @@ const TRANSPORT_CONFIG = {
   taxi: { icon: '🚕', label: 'Taxi', iconClass: 'icon-taxi', color: '#ffc107' }
 }
 
+function getProviderUrl(option, from, to, date) {
+  const f = encodeURIComponent(from)
+  const t = encodeURIComponent(to)
+  const type = (option.type || '').toLowerCase()
+  const company = (option.company || '').toLowerCase()
+
+  if (type === 'train') {
+    // IRCTC train search
+    return `https://www.irctc.co.in/nget/train-search`
+  }
+  if (type === 'flight') {
+    // Google Flights with origin/destination pre-filled
+    return `https://www.google.com/travel/flights?q=Flights+from+${f}+to+${t}`
+  }
+  if (type === 'bus') {
+    // RedBus with route pre-filled — sanitize city names to simple slug format
+    const fromSlug = from.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const toSlug = to.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    return `https://www.redbus.in/bus-tickets/${fromSlug}-to-${toSlug}`
+  }
+  if (type === 'taxi') {
+    if (company.includes('ola')) {
+      return `https://book.olacabs.com/?pickup=${f}&drop=${t}`
+    }
+    if (company.includes('uber')) {
+      return `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${t}`
+    }
+    // Zoomcar or default outstation taxi
+    return `https://www.zoomcar.com/`
+  }
+  return null
+}
+
 function ScoreCircle({ score }) {
   const cls = score >= 70 ? 'score-high' : score >= 45 ? 'score-medium' : 'score-low'
   return (
@@ -30,6 +63,7 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
       return
     }
     setBooking(true)
+    const providerUrl = getProviderUrl(option, from, to, date)
     try {
       await api.post('/bookings', {
         from_city: from,
@@ -38,9 +72,13 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
         price: option.price,
         date: date,
         company: option.company || option.name || t.label,
-        duration: formatDuration(option.duration)
+        duration: formatDuration(option.duration),
+        booking_url: providerUrl,
       })
       toast.success(`Booking confirmed! ${t.icon} ${option.company || option.name || t.label}`)
+      if (providerUrl) {
+        window.open(providerUrl, '_blank', 'noopener,noreferrer')
+      }
     } catch (err) {
       toast.error(err.message || 'Booking failed')
     } finally {

@@ -93,6 +93,17 @@ export default function Bookings() {
                     )}
                     {bk.duration && <span><i className="bi bi-clock me-1" />{bk.duration}</span>}
                   </div>
+                  {bk.booking_url && (
+                    <div className="mt-2">
+                      <button
+                        className="btn btn-outline-primary btn-animated btn-sm fw-600"
+                        style={{ borderRadius: '12px' }}
+                        onClick={() => window.open(bk.booking_url, '_blank', 'noopener,noreferrer')}
+                      >
+                        <i className="bi bi-box-arrow-up-right me-1" />Open Provider Site
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <button
                   className="btn btn-outline-danger btn-animated btn-sm fw-600"
