@@ -35,7 +35,7 @@ app.use(cookieParser());
 // The client must read the `x-csrf-token` value from the `_csrf` cookie
 // and send it back in the `x-csrf-token` request header for all
 // state-changing requests (POST, PUT, PATCH, DELETE).
-const { generateToken, doubleCsrfProtection } = doubleCsrf({
+const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => process.env.JWT_SECRET,
   cookieName: '_csrf',
   cookieOptions: {
@@ -49,7 +49,23 @@ const { generateToken, doubleCsrfProtection } = doubleCsrf({
 
 // Expose CSRF token to the SPA
 app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: generateToken(req, res) });
+  res.json({ csrfToken: generateCsrfToken(req, res) });
+});
+
+// Health check (GET — exempt from CSRF by ignoredMethods)
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// Helpful root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'TravelCompare API is running.',
+    docs: {
+      health: 'GET /api/health',
+      csrf: 'GET /api/csrf-token',
+      register: 'POST /api/auth/register',
+      login: 'POST /api/auth/login',
+    },
+  });
 });
 
 app.use(doubleCsrfProtection);
@@ -58,9 +74,6 @@ app.use(doubleCsrfProtection);
 app.use('/api/auth', authRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/bookings', bookingsRoutes);
-
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // 404 handler
 app.use((req, res) => {

@@ -18,6 +18,15 @@ async function fetchCsrfToken() {
   return csrfToken
 }
 
+// Pre-warm the CSRF token on app startup so the first POST does not race
+export async function initCsrf() {
+  try {
+    await fetchCsrfToken()
+  } catch {
+    // Non-fatal: the request interceptor will retry lazily before the first POST
+  }
+}
+
 // Attach x-csrf-token header to all state-changing requests
 api.interceptors.request.use(async config => {
   const method = (config.method || 'get').toLowerCase()
@@ -42,6 +51,7 @@ api.interceptors.response.use(
       err.response.data.error.toLowerCase().includes('csrf')
     if (isCsrf403 && !err.config?._csrfRetried) {
       err.config._csrfRetried = true
+      csrfToken = null
       await fetchCsrfToken()
       err.config.headers['x-csrf-token'] = csrfToken
       return api.request(err.config)

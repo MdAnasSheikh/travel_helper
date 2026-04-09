@@ -8,6 +8,10 @@ import './index.css'
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { initCsrf } from './utils/api'
+
+// Pre-warm the CSRF token so the first POST (register/login) has it ready
+initCsrf()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
