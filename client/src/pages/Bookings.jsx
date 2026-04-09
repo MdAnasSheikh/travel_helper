@@ -93,6 +93,19 @@ export default function Bookings() {
                     )}
                     {bk.duration && <span><i className="bi bi-clock me-1" />{bk.duration}</span>}
                   </div>
+                  {bk.booking_url && (
+                    <div className="mt-2">
+                      <a
+                        href={bk.booking_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline-primary btn-sm fw-600"
+                        style={{ borderRadius: '12px', fontSize: '0.8rem' }}
+                      >
+                        <i className="bi bi-box-arrow-up-right me-1" />Open Provider
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <button
                   className="btn btn-outline-danger btn-animated btn-sm fw-600"

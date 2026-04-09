@@ -10,6 +10,41 @@ const TRANSPORT_CONFIG = {
   taxi: { icon: '🚕', label: 'Taxi', iconClass: 'icon-taxi', color: '#ffc107' }
 }
 
+/**
+ * Returns the provider booking URL for a given transport type and company.
+ * These are the real booking sites users can use to complete their purchase.
+ */
+function getProviderUrl(type, company, from, to) {
+  const fromSlug = (from || '').toLowerCase().replace(/\s+/g, '-')
+  const toSlug = (to || '').toLowerCase().replace(/\s+/g, '-')
+  const co = (company || '').toLowerCase()
+
+  switch (type) {
+    case 'train':
+      return 'https://www.irctc.co.in/nget/train-search'
+    case 'flight':
+      if (co.includes('air india'))
+        return `https://www.airindia.com/book-flights.html`
+      if (co.includes('indigo') || co.includes('6e'))
+        return 'https://www.goindigo.in/'
+      if (co.includes('spicejet') || co.includes('sg-'))
+        return 'https://www.spicejet.com/'
+      if (co.includes('vistara') || co.includes('uk-'))
+        return 'https://www.airvistara.com/'
+      // Generic fallback — Google Flights
+      return `https://www.google.com/flights?q=flights+from+${encodeURIComponent(from)}+to+${encodeURIComponent(to)}`
+    case 'bus':
+      return `https://www.redbus.in/bus-tickets/${fromSlug}-to-${toSlug}`
+    case 'taxi':
+      if (co.includes('uber'))
+        return 'https://www.uber.com/in/en/ride/'
+      // Default to Ola for all other taxi providers
+      return 'https://www.olacabs.com/'
+    default:
+      return null
+  }
+}
+
 function ScoreCircle({ score }) {
   const cls = score >= 70 ? 'score-high' : score >= 45 ? 'score-medium' : 'score-low'
   return (
@@ -30,6 +65,7 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
       return
     }
     setBooking(true)
+    const providerUrl = getProviderUrl(option.type, option.company, from, to)
     try {
       await api.post('/bookings', {
         from_city: from,
@@ -38,9 +74,24 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
         price: option.price,
         date: date,
         company: option.company || option.name || t.label,
-        duration: formatDuration(option.duration)
+        duration: formatDuration(option.duration),
+        booking_url: providerUrl || undefined,
       })
-      toast.success(`Booking confirmed! ${t.icon} ${option.company || option.name || t.label}`)
+      toast.success(
+        <span>
+          {t.icon} Booking saved!{' '}
+          {providerUrl && (
+            <a href={providerUrl} target="_blank" rel="noopener noreferrer" className="text-white fw-700" style={{ textDecoration: 'underline' }}>
+              Open {t.label} site →
+            </a>
+          )}
+        </span>,
+        { autoClose: 8000 }
+      )
+      // Open the provider's booking page in a new tab
+      if (providerUrl) {
+        window.open(providerUrl, '_blank', 'noopener,noreferrer')
+      }
     } catch (err) {
       toast.error(err.message || 'Booking failed')
     } finally {
@@ -63,6 +114,8 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(price)
   }
+
+  const providerUrl = getProviderUrl(option.type, option.company, from, to)
 
   return (
     <div className={`card border-0 shadow-sm mb-3 ${option.isBest ? 'best-card' : ''}`} style={{ borderRadius: '16px' }}>
@@ -160,11 +213,12 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
             onClick={handleBook}
             disabled={booking}
             style={{ borderRadius: '20px', minWidth: 110 }}
+            title={providerUrl ? `Save booking & open ${t.label} provider site` : 'Save booking'}
           >
             {booking ? (
               <><span className="spinner-border spinner-border-sm me-1" />Booking...</>
             ) : (
-              <><i className="bi bi-bookmark-check me-1" />Book Now</>
+              <><i className="bi bi-bookmark-check me-1" />Book Now <i className="bi bi-box-arrow-up-right ms-1" style={{ fontSize: '0.75rem' }} /></>
             )}
           </button>
           <button
@@ -182,6 +236,12 @@ export default function ResultCard({ option, from, to, date, onWhyThis }) {
             <i className="bi bi-lightbulb me-1" />Why this?
           </button>
         </div>
+        {providerUrl && (
+          <p className="text-muted mt-2 mb-0" style={{ fontSize: '0.72rem' }}>
+            <i className="bi bi-info-circle me-1" />
+            Book Now saves your trip and opens the {t.label.toLowerCase()} provider site to complete your purchase.
+          </p>
+        )}
       </div>
     </div>
   )
