@@ -40,9 +40,12 @@ app.use(cookieParser());
 // (which exports `generateToken`) and v4 (which exports `generateCsrfToken`).
 const csrfSetup = doubleCsrf({
   getSecret: () => process.env.JWT_SECRET,
-  // v4 requires a session identifier to bind the token to a session.
-  // We use the client IP as a lightweight stateless identifier.
-  getSessionIdentifier: (req) => req.ip || '',
+  // Use the JWT auth cookie as the session identifier when the user is logged in,
+  // which binds the CSRF token to that specific authentication session.
+  // For unauthenticated requests (login / register), fall back to an empty string
+  // so tokens are still generated — the double-submit cookie pattern remains secure
+  // because the token is also stored in a httpOnly cookie that the attacker cannot read.
+  getSessionIdentifier: (req) => req.cookies?.token || '',
   cookieName: '_csrf',
   cookieOptions: {
     httpOnly: true,
@@ -60,12 +63,13 @@ app.get('/api/csrf-token', (req, res) => {
   res.json({ csrfToken: generateToken(req, res) });
 });
 
-app.use(doubleCsrfProtection);
-
-// Root route — helpful hint for developers hitting localhost:5000 directly
+// Root route — helpful hint for developers hitting localhost:5000 directly.
+// Registered before CSRF protection so it is always accessible.
 app.get('/', (req, res) => {
   res.json({ message: 'TravelCompare API — use /api/health to check status.' });
 });
+
+app.use(doubleCsrfProtection);
 
 // Routes
 app.use('/api/auth', authRoutes);
